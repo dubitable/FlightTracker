@@ -11,7 +11,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/api/get-token", async (req, res) => {
+app.get("/api/get-states", async (req, res) => {
+  const response = await fetch("https://opensky-network.org/api/states/all", {
+    headers: { Authorization: `Bearer ${req.query.token}` },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    res.status(response.status).send(errorText);
+    return;
+  }
+
+  const data = await response.json();
+  res.status(200).json(data);
+  return;
+});
+
+app.get("/api/get-token", async (_, res) => {
   const params = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: process.env.OPEN_SKY_CLIENT_ID!,
@@ -30,11 +46,13 @@ app.post("/api/get-token", async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return res.status(response.status).send(errorText);
+      res.status(response.status).send(errorText);
+      return;
     }
 
     const data = await response.json();
-    res.json(data);
+    res.status(200).json(data);
+    return;
   } catch (err: any) {
     console.error("Token fetch error:", err);
     res.status(500).json({ error: "Token fetch failed" });

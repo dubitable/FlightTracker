@@ -1,18 +1,31 @@
 import R3fGlobe from "r3f-globe";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import airports from "./assets/large-airports.json";
-import planes from "./assets/response.json";
 import { FlightClient } from "./flightclient";
 
 const GlobeViz = () => {
+  const [flights, setFlights] = useState<any[]>([]);
+
   const flightclient = new FlightClient(
     import.meta.env.VITE_CLIENT,
     import.meta.env.VITE_SECRET
   );
 
-  flightclient.getAccess();
+  function updateFlights() {
+    flightclient.getStates().then((states) => {
+      if (states) setFlights([...states]);
+    });
+  }
+
+  useEffect(() => {
+    addEventListener("keydown", (event) => {
+      if (event.key === "w") {
+        updateFlights();
+      }
+    });
+  }, []);
 
   const gData = useMemo(
     () =>
@@ -29,19 +42,17 @@ const GlobeViz = () => {
     []
   );
 
-  const pData = useMemo(
-    () =>
-      planes.states.map((state) => {
-        return {
-          lat: state[5],
-          lng: state[6],
-          size: 0,
-          color: "red",
-          radius: 0.1,
-        };
-      }),
-    []
-  );
+  const pData = useMemo(() => {
+    return flights.map((state) => {
+      return {
+        lat: state[6],
+        lng: state[5],
+        size: 0,
+        color: "red",
+        radius: 0.1,
+      };
+    });
+  }, [flights]);
 
   return (
     <R3fGlobe
@@ -54,7 +65,6 @@ const GlobeViz = () => {
       onHover={(_, elemData) => {
         if (!elemData) return;
         const data = elemData as (typeof gData)[number];
-        console.log(data?.municipality);
       }}
     />
   );
@@ -62,24 +72,26 @@ const GlobeViz = () => {
 
 const Scene = () => {
   return (
-    <div style={{ height: window.innerHeight }}>
-      <Canvas
-        flat
-        camera={useMemo(() => ({ fov: 50, position: [0, 0, 350] }), [])}
-      >
-        <OrbitControls
-          minDistance={101}
-          maxDistance={1e4}
-          dampingFactor={0.1}
-          zoomSpeed={0.3}
-          rotateSpeed={0.3}
-        />
-        <color attach="background" args={[0, 0, 0]} />
-        <ambientLight color={0xcccccc} intensity={Math.PI} />
-        <directionalLight intensity={0.6 * Math.PI} />
-        <GlobeViz />
-      </Canvas>
-    </div>
+    <>
+      <div style={{ height: window.innerHeight }}>
+        <Canvas
+          flat
+          camera={useMemo(() => ({ fov: 50, position: [0, 0, 350] }), [])}
+        >
+          <OrbitControls
+            minDistance={101}
+            maxDistance={1e4}
+            dampingFactor={0.1}
+            zoomSpeed={0.3}
+            rotateSpeed={0.3}
+          />
+          <color attach="background" args={[0, 0, 0]} />
+          <ambientLight color={0xcccccc} intensity={Math.PI} />
+          <directionalLight intensity={0.6 * Math.PI} />
+          <GlobeViz />
+        </Canvas>
+      </div>
+    </>
   );
 };
 
