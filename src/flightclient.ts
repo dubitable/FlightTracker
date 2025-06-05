@@ -1,19 +1,9 @@
-import { z } from "zod";
-
-export const AccessSchema = z.object({
-  access_token: z.string(),
-  expires_in: z.number(),
-  "not-before-policy": z.number(),
-  refresh_expires_in: z.number(),
-  scope: z.string(),
-  token_type: z.string(),
-});
-
-export const FlightsSchema = z.object({
-  time: z.number(),
-  states: z.array(z.any()),
-});
-
+import {
+  AccessSchema,
+  FlightsSchema,
+  RouteSchema,
+  type Route,
+} from "./schemas";
 export class FlightClient {
   client: string;
   secret: string;
@@ -54,5 +44,27 @@ export class FlightClient {
     if (!parsed.success) return;
 
     this.access = parsed.data.access_token;
+  }
+
+  private parseRoute(route: any): Route | undefined {
+    const parsed = RouteSchema.safeParse(route);
+    if (!parsed.success) return undefined;
+    return parsed.data;
+  }
+
+  public async getRoute(time: number, callsign: string) {
+    const response = await fetch(
+      `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
+    ).catch(() => {});
+
+    if (!response || !response.ok) return;
+    const data = await response.json();
+
+    const departure = this.parseRoute(data?.departure);
+    const arrival = this.parseRoute(data?.arrival);
+
+    if (!departure || !arrival) return;
+
+    return { departure, arrival };
   }
 }
