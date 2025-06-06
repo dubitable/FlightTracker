@@ -1,8 +1,4 @@
 import Scene from "./Globe";
-import PlaneIcon from "./icons/Plane";
-import exRoute from "./route.json";
-import exFlight from "./flight.json";
-
 function App() {
   return (
     <>

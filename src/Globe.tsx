@@ -4,22 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { FlightClient } from "./flightclient";
 import type { Route } from "./schemas";
-import exRoute from "./route.json";
-import exFlight from "./flight.json";
-import PlaneIcon from "./icons/Plane";
-
-const convertLocal = (time: Date, offset: string) => {
-  const [sign, hours, minutes] = offset
-    .match(/([+-])(\d{2}):(\d{2})/)
-    ?.slice(1) ?? ["", "", ""];
-
-  const offsetMinutes =
-    (Number(hours) * 60 + Number(minutes)) * (sign === "+" ? 1 : -1);
-
-  const depTimeLocal = new Date(time.getTime() + offsetMinutes * 60 * 1000);
-
-  return depTimeLocal.toISOString().replace("T", " ").substring(0, 16);
-};
+import PlaneModal from "./PlaneModal";
 
 // #TODO get rid of all anys bad practice
 
@@ -29,14 +14,27 @@ type GlobeVizProps = {
     { arrival: Route; departure: Route } | undefined,
     (newVal: { arrival: Route; departure: Route } | undefined) => void
   ];
+  flightsStates: [any[], (newVal: any[]) => void];
+  fData: {
+    lat: number;
+    lng: number;
+    color: string;
+    size: number;
+    callsign: string | null;
+    time: number | null;
+    index: number;
+  }[];
 };
 
-const GlobeViz = (props: GlobeVizProps) => {
-  const { flightState, routeState } = props;
+const GlobeViz = ({
+  flightState,
+  flightsStates,
+  routeState,
+  fData,
+}: GlobeVizProps) => {
   const [flightFocus, setFlightFocus] = flightState;
   const [route, setRoute] = routeState;
-
-  const [flights, setFlights] = useState<any[]>([]);
+  const [flights, setFlights] = flightsStates;
 
   const flightclient = new FlightClient();
 
@@ -54,21 +52,7 @@ const GlobeViz = (props: GlobeVizProps) => {
     });
   }, []);
 
-  const fData = useMemo(() => {
-    return flights.map((state, index) => {
-      return {
-        lat: state[6] as number,
-        lng: state[5] as number,
-        color: "red",
-        size: 0,
-        callsign: state[1] as string | null,
-        time: state[4] as number | null,
-        index,
-      };
-    });
-  }, [flights]);
-
-  const points = flightFocus === undefined ? fData : [exFlight];
+  const points = flightFocus === undefined ? fData : [fData[flightFocus]];
 
   const gData = useMemo(() => {
     if (!route) return;
@@ -109,6 +93,8 @@ const GlobeViz = (props: GlobeVizProps) => {
             setFlightFocus((data as any).index);
             const callsign = (data as any).callsign;
             const time = (data as any).time;
+
+            console.log(data);
             if (callsign && time) {
               flightclient.getRoute(time, callsign).then((route) => {
                 if (route) setRoute({ ...route });
@@ -124,13 +110,26 @@ const GlobeViz = (props: GlobeVizProps) => {
 };
 
 const Scene = () => {
-  const [flightFocus, setFlightFocus] = useState<number | undefined>(1);
+  const [flightFocus, setFlightFocus] = useState<number | undefined>();
   const [route, setRoute] = useState<
     { arrival: Route; departure: Route } | undefined
-  >(exRoute);
+  >();
 
-  const depTime = new Date(exRoute.departure.timings[0].value);
-  const arrTime = new Date(exRoute.arrival.timings[0].value);
+  const [flights, setFlights] = useState<any[]>([]);
+
+  const fData = useMemo(() => {
+    return flights.map((state, index) => {
+      return {
+        lat: state[6] as number,
+        lng: state[5] as number,
+        color: "red",
+        size: 0,
+        callsign: state[1] as string | null,
+        time: state[4] as number | null,
+        index,
+      };
+    });
+  }, [flights]);
 
   return (
     <>
@@ -152,71 +151,14 @@ const Scene = () => {
           <GlobeViz
             flightState={[flightFocus, setFlightFocus]}
             routeState={[route, setRoute]}
+            flightsStates={[flights, setFlights]}
+            fData={fData}
           />
         </Canvas>
       </div>
-      <div className="fixed right-0 bottom-0 left-3/4">
-        <article className="rounded-xl border border-gray-700 bg-gray-800 p-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16">
-              <PlaneIcon />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium text-white">
-                {exFlight.callsign}
-              </h3>
-              <div className="flow-root">
-                <ul className="-m-1 flex flex-wrap">
-                  <li className="p-1 leading-none">
-                    <a href="#" className="text-xs font-medium text-gray-300">
-                      {exRoute.departure.iataCode}
-                    </a>
-                  </li>
-
-                  <li className="p-1 leading-none">
-                    <a href="#" className="text-xs font-medium text-gray-300">
-                      {`->`}
-                    </a>
-                  </li>
-
-                  <li className="p-1 leading-none">
-                    <a href="#" className="text-xs font-medium text-gray-300">
-                      {exRoute.arrival.iataCode}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <ul className="mt-4 space-y-2">
-            <li>
-              <a className="block h-full rounded-lg border border-gray-700 p-4 hover:border-pink-600">
-                <strong className="font-medium text-white">
-                  {exRoute.departure.info.name}
-                </strong>
-
-                <p className="mt-1 text-xs font-medium text-gray-300">
-                  {convertLocal(depTime, exRoute.departure.info.timeZoneOffset)}
-                </p>
-              </a>
-            </li>
-
-            <li>
-              <a className="block h-full rounded-lg border border-gray-700 p-4 hover:border-pink-600">
-                <strong className="font-medium text-white">
-                  {exRoute.arrival.info.name}
-                </strong>
-
-                <p className="mt-1 text-xs font-medium text-gray-300">
-                  {convertLocal(arrTime, exRoute.arrival.info.timeZoneOffset)}
-                </p>
-              </a>
-            </li>
-          </ul>
-        </article>
-      </div>
+      {flightFocus && route ? (
+        <PlaneModal flight={fData[flightFocus]} route={route} />
+      ) : undefined}
     </>
   );
 };
