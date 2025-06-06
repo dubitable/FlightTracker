@@ -5,17 +5,9 @@ import {
   type Route,
 } from "./schemas";
 export class FlightClient {
-  client: string;
-  secret: string;
-
   BASE_URL = "http://localhost:3001";
 
   access: string | undefined;
-
-  constructor(client: string, secret: string) {
-    this.client = client;
-    this.secret = secret;
-  }
 
   public hasAccess() {
     return this.access !== undefined;
@@ -55,7 +47,7 @@ export class FlightClient {
   public async getRoute(time: number, callsign: string) {
     const response = await fetch(
       `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
-    ).catch(() => {});
+    );
 
     if (!response || !response.ok) return;
     const data = await response.json();

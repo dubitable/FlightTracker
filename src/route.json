@@ -1,0 +1,80 @@
+{
+  "departure": {
+    "iataCode": "LAX",
+    "timings": [
+      {
+        "qualifier": "STD",
+        "value": "2025-06-06T10:25-07:00"
+      }
+    ],
+    "info": {
+      "type": "location",
+      "subType": "AIRPORT",
+      "name": "LOS ANGELES INTL",
+      "detailedName": "LOS ANGELES/CA/US:LOS ANGELES",
+      "id": "ALAX",
+      "self": {
+        "href": "https://test.api.amadeus.com/v1/reference-data/locations/ALAX",
+        "methods": ["GET"]
+      },
+      "timeZoneOffset": "-07:00",
+      "iataCode": "LAX",
+      "geoCode": {
+        "latitude": 33.9425,
+        "longitude": -118.4081
+      },
+      "address": {
+        "cityName": "LOS ANGELES",
+        "cityCode": "LAX",
+        "countryName": "UNITED STATES OF AMERICA",
+        "countryCode": "US",
+        "stateCode": "CA",
+        "regionCode": "NAMER"
+      },
+      "analytics": {
+        "travelers": {
+          "score": 53
+        }
+      }
+    }
+  },
+  "arrival": {
+    "iataCode": "EWR",
+    "timings": [
+      {
+        "qualifier": "STA",
+        "value": "2025-06-06T18:55-04:00"
+      }
+    ],
+    "info": {
+      "type": "location",
+      "subType": "AIRPORT",
+      "name": "NEWARK LIBERTY INTL",
+      "detailedName": "NEW YORK/NJ/US:NEWARK LIBERTY",
+      "id": "AEWR",
+      "self": {
+        "href": "https://test.api.amadeus.com/v1/reference-data/locations/AEWR",
+        "methods": ["GET"]
+      },
+      "timeZoneOffset": "-04:00",
+      "iataCode": "EWR",
+      "geoCode": {
+        "latitude": 40.69112,
+        "longitude": -74.17888
+      },
+      "address": {
+        "cityName": "NEW YORK",
+        "cityCode": "NYC",
+        "countryName": "UNITED STATES OF AMERICA",
+        "countryCode": "US",
+        "stateCode": "NJ",
+        "regionCode": "NAMER"
+      },
+      "analytics": {
+        "travelers": {
+          "score": 24
+        }
+      }
+    }
+  }
+}
