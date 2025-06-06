@@ -49,7 +49,7 @@ app.get("/api/get-route", async (req, res) => {
     .catch((e: any) => console.log(e));
 
   if (!airline || airline.result.meta.count != 1) {
-    res.status(400).send();
+    res.status(202).send("airline");
     return;
   }
 
@@ -61,14 +61,12 @@ app.get("/api/get-route", async (req, res) => {
     scheduledDepartureDate: new Date(Date.now()).toISOString().split("T")[0],
   };
 
-  console.log(body);
-
   const response = await amadeus.schedule.flights
     .get(body)
     .catch((e: any) => console.log(e));
 
   if (!response || response.result.meta.count != 1) {
-    res.status(400).send();
+    res.status(202).send("flights");
     return;
   }
 
@@ -85,6 +83,8 @@ app.get("/api/get-route", async (req, res) => {
   };
 
   const points = response.data[0]?.flightPoints;
+
+  console.log(response.data[0].flightPoints);
 
   const dInfo = await getAirportInfo(points[0].iataCode);
   const aInfo = await getAirportInfo(points[1].iataCode);
@@ -149,7 +149,6 @@ app.get("/api/get-token", async (_, res) => {
     res.status(200).json(data);
     return;
   } catch (err: any) {
-    console.error("Token fetch error:", err);
     res.status(500).json({ error: "Token fetch failed" });
   }
 });

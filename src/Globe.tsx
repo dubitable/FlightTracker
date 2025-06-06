@@ -5,6 +5,7 @@ import { OrbitControls } from "@react-three/drei";
 import { FlightClient } from "./flightclient";
 import type { Route } from "./schemas";
 import PlaneModal from "./PlaneModal";
+import WaitModal from "./WaitModal";
 
 // #TODO get rid of all anys bad practice
 
@@ -93,8 +94,6 @@ const GlobeViz = ({
             setFlightFocus((data as any).index);
             const callsign = (data as any).callsign;
             const time = (data as any).time;
-
-            console.log(data);
             if (callsign && time) {
               flightclient.getRoute(time, callsign).then((route) => {
                 if (route) setRoute({ ...route });
@@ -102,6 +101,7 @@ const GlobeViz = ({
             }
           } else {
             setFlightFocus(undefined);
+            setRoute(undefined);
           }
         }
       }}
@@ -156,6 +156,10 @@ const Scene = () => {
           />
         </Canvas>
       </div>
+      {flightFocus && !route ? (
+        <WaitModal flight={fData[flightFocus]} />
+      ) : undefined}
+
       {flightFocus && route ? (
         <PlaneModal flight={fData[flightFocus]} route={route} />
       ) : undefined}

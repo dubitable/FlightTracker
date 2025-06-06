@@ -45,18 +45,26 @@ export class FlightClient {
   }
 
   public async getRoute(time: number, callsign: string) {
-    const response = await fetch(
-      `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
-    );
+    try {
+      const response = await fetch(
+        `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
+      );
 
-    if (!response || !response.ok) return;
-    const data = await response.json();
+      if (response.status != 200) {
+        console.log(await response.text());
+        return;
+      }
 
-    const departure = this.parseRoute(data?.departure);
-    const arrival = this.parseRoute(data?.arrival);
+      const data = await response.json();
 
-    if (!departure || !arrival) return;
+      const departure = this.parseRoute(data?.departure);
+      const arrival = this.parseRoute(data?.arrival);
 
-    return { departure, arrival };
+      if (!departure || !arrival) return;
+
+      return { departure, arrival };
+    } catch (error: any) {
+      console.log(error);
+    }
   }
 }
