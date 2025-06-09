@@ -84,7 +84,7 @@ app.get("/api/get-route", async (req, res) => {
 
   const points = response.data[0]?.flightPoints;
 
-  console.log(response.data[0].flightPoints);
+  console.log(response.data[0].segments);
 
   const dInfo = await getAirportInfo(points[0].iataCode);
   const aInfo = await getAirportInfo(points[1].iataCode);
@@ -112,8 +112,7 @@ app.get("/api/get-states", async (req, res) => {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    res.status(response.status).send(errorText);
+    res.status(201).send("nostate");
     return;
   }
 
@@ -129,28 +128,22 @@ app.get("/api/get-token", async (_, res) => {
     client_secret: process.env.OPEN_SKY_CLIENT_SECRET!,
   });
 
-  try {
-    const response = await fetch(
-      "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params,
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      res.status(response.status).send(errorText);
-      return;
+  const response = await fetch(
+    "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params,
     }
+  );
 
-    const data = await response.json();
-    res.status(200).json(data);
+  if (!response.ok) {
+    res.status(201).send("noaccess");
     return;
-  } catch (err: any) {
-    res.status(500).json({ error: "Token fetch failed" });
   }
+
+  const data = await response.json();
+  res.status(200).json(data);
 });
 
 app.listen(PORT, () => {

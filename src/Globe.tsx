@@ -6,8 +6,15 @@ import { FlightClient } from "./flightclient";
 import type { Route } from "./schemas";
 import PlaneModal from "./PlaneModal";
 import WaitModal from "./WaitModal";
+import Warning from "./Warning";
+import WelcomeCard from "./WelcomeCard";
 
-// #TODO get rid of all anys bad practice
+// TODO get rid of all anys bad practice
+
+const warnings = {
+  amadeus:
+    "Our provider was not able to retrieve data for this flight, likely because it is non-commercial. You can follow the FlightAware link on the flight number for more information.",
+};
 
 type GlobeVizProps = {
   flightState: [number | undefined, (newVal: number | undefined) => void];
@@ -15,7 +22,7 @@ type GlobeVizProps = {
     { arrival: Route; departure: Route } | undefined,
     (newVal: { arrival: Route; departure: Route } | undefined) => void
   ];
-  flightsStates: [any[], (newVal: any[]) => void];
+  flightsState: [any[], (newVal: any[]) => void];
   fData: {
     lat: number;
     lng: number;
@@ -25,32 +32,38 @@ type GlobeVizProps = {
     time: number | null;
     index: number;
   }[];
+  warningState: [string | undefined, (newVal: string | undefined) => void];
+  setUpdated: (newVal: Date) => void;
 };
 
 const GlobeViz = ({
   flightState,
-  flightsStates,
+  flightsState,
   routeState,
   fData,
+  warningState,
+  setUpdated,
 }: GlobeVizProps) => {
   const [flightFocus, setFlightFocus] = flightState;
   const [route, setRoute] = routeState;
-  const [flights, setFlights] = flightsStates;
+  const [, setFlights] = flightsState;
+  const [, setWarning] = warningState;
 
   const flightclient = new FlightClient();
 
   function updateFlights() {
     flightclient.getStates().then((states) => {
-      if (states) setFlights([...states]);
+      if (states) {
+        setFlights([...states]);
+        setUpdated(new Date(Date.now()));
+      }
     });
   }
 
   useEffect(() => {
-    addEventListener("keydown", (event) => {
-      if (event.key === "w") {
-        updateFlights();
-      }
-    });
+    updateFlights();
+    const id = setInterval(() => updateFlights(), 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const points = flightFocus === undefined ? fData : [fData[flightFocus]];
@@ -97,9 +110,13 @@ const GlobeViz = ({
             if (callsign && time) {
               flightclient.getRoute(time, callsign).then((route) => {
                 if (route) setRoute({ ...route });
+                else {
+                  setWarning(warnings.amadeus);
+                }
               });
             }
           } else {
+            setWarning(undefined);
             setFlightFocus(undefined);
             setRoute(undefined);
           }
@@ -116,6 +133,9 @@ const Scene = () => {
   >();
 
   const [flights, setFlights] = useState<any[]>([]);
+
+  const [warning, setWarning] = useState<string | undefined>();
+  const [lastUpdated, setLastUpdated] = useState<Date | undefined>();
 
   const fData = useMemo(() => {
     return flights.map((state, index) => {
@@ -151,8 +171,10 @@ const Scene = () => {
           <GlobeViz
             flightState={[flightFocus, setFlightFocus]}
             routeState={[route, setRoute]}
-            flightsStates={[flights, setFlights]}
+            flightsState={[flights, setFlights]}
             fData={fData}
+            warningState={[warning, setWarning]}
+            setUpdated={setLastUpdated}
           />
         </Canvas>
       </div>
@@ -163,6 +185,16 @@ const Scene = () => {
       {flightFocus && route ? (
         <PlaneModal flight={fData[flightFocus]} route={route} />
       ) : undefined}
+
+      {warning ? (
+        <Warning
+          onClose={() => setWarning(undefined)}
+          header="Data Retrieval Error"
+        >
+          {warning}
+        </Warning>
+      ) : undefined}
+      <WelcomeCard lastUpdated={lastUpdated} />
     </>
   );
 };

@@ -15,6 +15,8 @@ export class FlightClient {
 
   public async getStates() {
     if (!this.hasAccess()) await this.getAccess();
+    if (!this.hasAccess) return [];
+
     const coords = "lamin=-90.0&lamax=90.0&lomin=-180.0&lomax=180.0";
 
     const response = await fetch(
@@ -45,26 +47,19 @@ export class FlightClient {
   }
 
   public async getRoute(time: number, callsign: string) {
-    try {
-      const response = await fetch(
-        `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
-      );
+    const response = await fetch(
+      `${this.BASE_URL}/api/get-route/?time=${time}&callsign=${callsign}`
+    );
 
-      if (response.status != 200) {
-        console.log(await response.text());
-        return;
-      }
+    if (response.status != 200) return;
 
-      const data = await response.json();
+    const data = await response.json();
 
-      const departure = this.parseRoute(data?.departure);
-      const arrival = this.parseRoute(data?.arrival);
+    const departure = this.parseRoute(data?.departure);
+    const arrival = this.parseRoute(data?.arrival);
 
-      if (!departure || !arrival) return;
+    if (!departure || !arrival) return;
 
-      return { departure, arrival };
-    } catch (error: any) {
-      console.log(error);
-    }
+    return { departure, arrival };
   }
 }
